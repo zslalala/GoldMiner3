@@ -1,18 +1,27 @@
 # coding=utf-8
 from __future__ import print_function, absolute_import
-from gm.api import *
-import matplotlib as mpl   # 用于设置曲线参数
-import matplotlib.pyplot as plt
-import mplfinance as mpf
-from DataPrepare import DataPreprocess
-from Draw import Drawing
+
 import pandas as pd
-import numpy as np
+from gm.api import *
+from DataPrepare import DataPreprocess
+from HigherDraw import HigherDrawing
+from PlotlyDraw import plotDrawing
+
 
 set_token('08fabd471462703dfe3f43b43d480f6e7dd1b5b6')
 StockId = 'SHSE.600000'
-data = history(symbol='SHSE.600000', frequency='1d', start_time='2020-01-01', end_time='2021-01-31', fields='open,high,low,close,eob', adjust=ADJUST_PREV, adjust_end_time='2020- 12-31', df=True)
+start_time = '2014-01-01'
+end_time = '2021-08-31'
 
-data = DataPreprocess(data)
+price_Data = history(symbol=StockId, frequency='1d', start_time=start_time, end_time=end_time, fields='open,high,low,close,eob', df=True)
+fundamental_Data = get_fundamentals(table='trading_derivative_indicator', symbols=StockId, start_date=start_time, end_date=end_time, fields='PETTM',limit = 10000, df=True)
 
-Drawing(data)
+price_Data,fundamental_Data = DataPreprocess(price_Data,fundamental_Data)
+
+data = pd.merge(price_Data,fundamental_Data,left_index=True,right_index=True)
+
+print(data)
+
+plotDrawing(StockId,data)
+
+# HigherDrawing(data)
