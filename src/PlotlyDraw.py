@@ -40,6 +40,6 @@ def plotDrawing(StockId,data,NeedStaff = True,NeedPE = True):
         fig.add_trace(go.Scatter(x=data.index,y=data.PETTM,name='PETTM',showlegend=True),row=2,col=1)
 
     fig.update_layout(layout)
-    # fig.update(layout_xaxis_rangeslider_visible=False)
+    fig.update(layout_xaxis_rangeslider_visible=False)
 
     plotly.offline.plot(fig)
