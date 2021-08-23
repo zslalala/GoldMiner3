@@ -41,5 +41,4 @@ def plotDrawing(StockId,data,NeedStaff = True,NeedPE = True):
 
     fig.update_layout(layout)
     fig.update(layout_xaxis_rangeslider_visible=False)
-
     plotly.offline.plot(fig)
