@@ -16,11 +16,11 @@ def plotDrawing(StockId,data,NeedStaff = True,NeedPE = True):
                                   open=data.open, high=data.high,
                                   low=data.low, close=data.close, increasing_line_color='#f6416c',
                                   decreasing_line_color='#7bc0a3', name="Price"),row=1,col=1)
-
-
+    #
+    #
     #设置布局
     layout = go.Layout(title_text=StockId, title_font_size=30, autosize=True, margin=go.layout.Margin(l=10, r=1, b=10),
-                       xaxis=dict(type='category'),
+                       # xaxis=dict(type = "category"),
                        )
 
 
@@ -41,4 +41,8 @@ def plotDrawing(StockId,data,NeedStaff = True,NeedPE = True):
 
     fig.update_layout(layout)
     fig.update(layout_xaxis_rangeslider_visible=False)
+    fig.update_xaxes(rangebreaks=[
+        dict(bounds=["sat", "mon"]),  # hide weekends
+        ]
+    )
     plotly.offline.plot(fig)
