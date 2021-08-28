@@ -23,6 +23,4 @@ data = price_Data
 
 print(data)
 
-random_cv = RandomizedSearchCV(estimator=)
-
 plotDrawing(ETFId,data,True,False)
