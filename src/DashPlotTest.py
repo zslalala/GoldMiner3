@@ -54,8 +54,7 @@ def MainGraphPlot(slider):
                                  open=data.open, high=data.high,
                                  low=data.low, close=data.close, increasing_line_color='#f6416c',
                                  decreasing_line_color='#7bc0a3', name="Price",
-                                 hoverinfo='text',
-                                 text=date_list,
+                                 hovertext=date_list,
                                  ), row=1, col=1)
 
     fig.update(layout_xaxis_rangeslider_visible=False)
