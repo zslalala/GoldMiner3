@@ -4,7 +4,7 @@ from __future__ import print_function, absolute_import
 import pandas as pd
 from gm.api import *
 from DataPrepare import DataPreprocess,get_DateList
-from MultiMovingAverageLine import SimpleMovingAverage
+from MultiMovingAverageLine import DealMovingAverage
 from HigherDraw import HigherDrawing
 from PlotlyDraw import ETFPlotDrawing
 
@@ -21,8 +21,9 @@ UseFive = False
 
 #移动平均线设置
 UseMA = True
-MA_Type = 'SMA'
-windowList = [5,10,20,60]
+MAType = 'HMA'
+windowList = [5,20,60,120]
+
 
 price_Data = history(symbol=ETFId, frequency='1d', start_time=start_time, end_time=end_time, fields='open,high,low,close,eob', df=True)
 
@@ -30,10 +31,6 @@ price_Data,_= DataPreprocess(price_Data,False)
 
 data = price_Data
 
-print(data)
-
-data,MAtitleName = SimpleMovingAverage(data,windowList)
-
-print(MAtitleName)
+data,MAtitleName = DealMovingAverage(data,MAType,windowList)
 
 ETFPlotDrawing(ETFId,data,UseFive,UseMA,MAtitleName)

@@ -5,7 +5,7 @@ import pandas as pd
 from gm.api import *
 from DataPrepare import DataPreprocess,get_DateList
 from HigherDraw import HigherDrawing
-from PlotlyDraw import plotDrawing
+from PlotlyDraw import ETFPlotDrawing
 
 
 set_token('08fabd471462703dfe3f43b43d480f6e7dd1b5b6')
@@ -22,4 +22,4 @@ data = pd.merge(price_Data,fundamental_Data,left_index=True,right_index=True)
 
 print(data)
 
-plotDrawing(StockId,data)
+ETFPlotDrawing(StockId,data)
