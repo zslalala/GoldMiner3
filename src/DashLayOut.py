@@ -2,6 +2,9 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output, State
+from Server import app,server
+import DashPlotTest
+import MovingAverageStrategy
 
 #总布局
 def GetOverAllLayOut():
@@ -80,3 +83,5 @@ def GetValuationLayOut():
     ])
 
     return ValuationLayOut
+
+app.layout = GetOverAllLayOut()

@@ -6,21 +6,23 @@ from dash.dependencies import Input, Output, State
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 from MultiMovingAverageLine import DealMovingAverage
-from DashLayOut import GetOverAllLayOut
+# from DashLayOut import GetOverAllLayOut
 from DataProcess import StaffAnalysis,PEAnalysis
+# import MovingAverageStrategy
 import plotly
 
 import pandas as pd
 from gm.api import *
 from DataPrepare import DataPreprocess,get_DateList
+from Server import app
 
 #设置个人用户的tokenID
 set_token('08fabd471462703dfe3f43b43d480f6e7dd1b5b6')
 
-app = dash.Dash(__name__)
+# app = dash.Dash(__name__)
 
 #布局信息
-app.layout = GetOverAllLayOut()
+# app.layout = GetOverAllLayOut()
 
 #主数据获取函数
 @app.callback(
@@ -96,7 +98,10 @@ def MainGraphPlot(text,valueText,n_clicks,MAType,Timing01,Timing02,Timing03,Timi
 
     return fig
 
+#主数据传输函数
+def GetData():
+    return data
 
 #启动点
-if __name__ == '__main__':
-    app.run_server()
+# if __name__ == '__main__':
+#     app.run_server()
