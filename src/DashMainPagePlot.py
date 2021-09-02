@@ -93,4 +93,10 @@ def MainGraphPlot(text,valueText,n_clicks,MAType,Timing01,Timing02,Timing03,Timi
 
 #主数据传输函数
 def GetData():
-    return data
+
+    try:
+        type(eval(data))
+    except:
+        return None
+    else:
+        return data

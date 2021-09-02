@@ -54,6 +54,8 @@ def TestMultiFile(text):
 
     data = GetData()
 
-    print(data)
-
-    return text + "300"
+    if data is None:
+        return "No Data"
+    else:
+        print(data)
+        return text + "300"
