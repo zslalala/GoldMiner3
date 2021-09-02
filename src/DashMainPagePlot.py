@@ -14,6 +14,9 @@ from Server import app
 #设置个人用户的tokenID
 set_token('08fabd471462703dfe3f43b43d480f6e7dd1b5b6')
 
+# global data
+# global date_list
+
 #主数据获取函数
 @app.callback(
     Output("StockP","children"),

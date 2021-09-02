@@ -4,7 +4,7 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 from Server import app,server
 import DashMainPagePlot                 #一定要导入，不要乱删
-import MovingAverageStrategy        #一定要导入，不要乱删
+import MovingAverageStrategy            #一定要导入，不要乱删
 
 #总布局
 def GetOverAllLayOut():
@@ -22,7 +22,12 @@ def GetOverAllLayOut():
 
         dcc.Graph(id="graph"),
         dcc.Input(id='my-id', value='initial value', type='text'),
-        html.Div(id='my-div')
+        html.Div(id='my-div'),
+
+
+        html.Br(),
+        GetAverageStrategy(),
+
     ])
 
     return OverAllLayOut
@@ -83,6 +88,30 @@ def GetValuationLayOut():
     ])
 
     return ValuationLayOut
+
+#均线策略界面
+def GetAverageStrategy():
+
+    AverageStrategyLayOut = html.Div([
+
+        html.P(id = 'MAStrategyP',children = 'MovingAverageStrategy'),
+
+        dcc.Dropdown(id='MAStrategyDown',
+            options=[
+                {'label': 'DoubleAverage', 'value': 'DoubleAverage'},
+                {'label': 'ThripleAverage', 'value': 'ThripleAverage'},
+            ],
+            value='DoubleAverage'
+        ),
+
+        html.Div(id = 'AverageContainer'),
+        # dcc.Input(id = 'shortMA',value=20, type='number'),
+        # dcc.Input(id = 'longMA',value=60, type='number'),
+        html.P(id = "TestMultiFileP"),
+    ])
+
+    return AverageStrategyLayOut
+
 
 #布局信息
 app.layout = GetOverAllLayOut()
