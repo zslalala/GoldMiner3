@@ -2,7 +2,7 @@ from __future__ import print_function, absolute_import
 from dash.dependencies import Input, Output, State
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-from MultiMovingAverageLine import DealMovingAverage
+from MultiMovingAverageLineDash import DealMovingAverage
 from DataProcess import StaffAnalysis,PEAnalysis
 import plotly
 
@@ -95,8 +95,8 @@ def MainGraphPlot(text,valueText,n_clicks,MAType,Timing01,Timing02,Timing03,Timi
 def GetData():
 
     try:
-        type(eval(data))
+        print(data)
     except:
-        return None
+        return None,None
     else:
-        return data
+        return data,date_list
