@@ -96,6 +96,18 @@ def GetAverageStrategy():
 
         html.P(id = 'MAStrategyP',children = 'MovingAverageStrategy'),
 
+        html.P(children="均线类型"),
+        dcc.Dropdown(id='MAStrategyTypeDown',
+            options=[
+                {'label': 'SMA', 'value': 'SMA'},
+                {'label': 'EMA', 'value': 'EMA'},
+                {'label': 'WMA', 'value': 'WMA'},
+                {'label': 'HMA', 'value': 'HMA'},
+            ],
+            value = 'SMA'
+        ),
+
+        html.P(children="策略类型"),
         dcc.Dropdown(id='MAStrategyDown',
             options=[
                 {'label': 'DoubleAverage', 'value': 'DoubleAverage'},
@@ -105,8 +117,6 @@ def GetAverageStrategy():
         ),
 
         html.Div(id = 'AverageContainer'),
-        # dcc.Input(id = 'shortMA',value=20, type='number'),
-        # dcc.Input(id = 'longMA',value=60, type='number'),
         html.P(id = "TestMultiFileP"),
     ])
 
