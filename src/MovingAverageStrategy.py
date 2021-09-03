@@ -57,11 +57,11 @@ def MainGraphPlot(n_clicks,MAType,DShortMA,DLongMA):
     data,date_list = GetData()
 
     if data is None:
-        return None
+        return 0
 
     Average,MAtitleName = DealMovingAverage(data=data,MAtype=MAType,windowList=windowList)
 
-    result = BuyAndSellPoint(Average)
+    # result = BuyAndSellPoint(Average)
 
     fig = make_subplots(rows=1, cols=1,
                         subplot_titles=('MADoubletrategy'))

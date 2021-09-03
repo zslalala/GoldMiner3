@@ -65,16 +65,21 @@ def MainGraphPlot(text,valueText,n_clicks,MAType,Timing01,Timing02,Timing03,Timi
 
     windowList = [Timing01,Timing02,Timing03,Timing04]
 
-    Average,MAtitleName = DealMovingAverage(data=data,MAtype=MAType,windowList=windowList)
+    CData,CData_list = GetData()
+
+    if CData is None:
+        return 0
+
+    Average,MAtitleName = DealMovingAverage(data=CData,MAtype=MAType,windowList=windowList)
 
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True, vertical_spacing=0.2,
                         subplot_titles=('StockPrice', valueText), row_width=[0.2, 0.7])
 
-    fig.add_trace(go.Candlestick(x=data.itx,
-                                 open=data.open, high=data.high,
-                                 low=data.low, close=data.close, increasing_line_color='#f6416c',
+    fig.add_trace(go.Candlestick(x=CData.itx,
+                                 open=CData.open, high=CData.high,
+                                 low=CData.low, close=CData.close, increasing_line_color='#f6416c',
                                  decreasing_line_color='#7bc0a3', name="Price",
-                                 hovertext=date_list,
+                                 hovertext=CData_list,
                                  ), row=1, col=1)
 
     for i in MAtitleName:
