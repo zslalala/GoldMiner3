@@ -31,7 +31,7 @@ def DataAcquire(n_clicks,StockId,StartTime,EndTime):
         return "WrongID"
 
     price_Data = history(symbol=StockId, frequency='1d', start_time=StartTime, end_time=EndTime,
-                         fields='open,high,low,close,eob', df=True)
+                         fields='open,high,low,close,eob', df=True, adjust=ADJUST_PREV)
 
     fundamental_Data = get_fundamentals(table='trading_derivative_indicator', symbols=StockId, start_date=StartTime,
                                         end_date=EndTime, fields='PETTM', limit=10000, df=True)

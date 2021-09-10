@@ -12,7 +12,7 @@ from PlotlyDraw import ETFPlotDrawing
 set_token('08fabd471462703dfe3f43b43d480f6e7dd1b5b6')
 
 #ETFId,起始终止时间设置
-ETFId = 'SHSE.000300'
+ETFId = 'SHSE.600000'
 start_time = '2014-01-01'
 end_time = '2021-08-31'
 

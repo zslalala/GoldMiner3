@@ -22,6 +22,8 @@ def SimpleMovingAverage(data,windowList):
     #定义新的Dataframe
     Average = pd.DataFrame(data.itx)
 
+    Average['close'] = data.close
+
     close_np = np.asarray(data['close'])
 
     MAtitleName = []
@@ -44,6 +46,8 @@ def ExponentialMovingAverage(data,windowList):
     #定义新的Dataframe
     Average = pd.DataFrame(data.itx)
 
+    Average['close'] = data.close
+
     close_np = np.asarray(data['close'])
 
     MAtitleName = []
@@ -65,6 +69,8 @@ def WeightedMovingAverage(data,windowList):
     # 定义新的Dataframe
     Average = pd.DataFrame(data.itx)
 
+    Average['close'] = data.close
+
     close_np = np.asarray(data['close'])
 
     MAtitleName = []
@@ -85,6 +91,8 @@ def HullMovingAverage(data,windowList):
 
     # 定义新的Dataframe
     Average = pd.DataFrame(data.itx)
+
+    Average['close'] = data.close
 
     MAtitleName = []
 
