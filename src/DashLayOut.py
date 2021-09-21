@@ -39,7 +39,7 @@ def GetStockIdLayOut():
 
     StockIdLayOut = html.Div([
         dcc.Input(id="StockIdInput", value='SHSE.600000', type='text'),
-        dcc.Input(id="StartTime", value='2014-01-01', type='text'),
+        dcc.Input(id="StartTime", value='2010-01-01', type='text'),
         dcc.Input(id="EndTime", value='2021-08-31', type='text'),
         html.Br(),
         html.Button('查询', id='StockIdButton', n_clicks=0),
@@ -108,6 +108,14 @@ def GetAverageStrategy():
             value = 'SMA'
         ),
 
+        html.P(children="仓位管理策略"),
+        dcc.Dropdown(id='DBPositionControl',
+                     options=[
+                         {'label': 'None', 'value': 'None'},
+                         {'label': 'PETTM', 'value': 'PETTM'},
+                     ],
+                     value='PETTM'),
+
         html.P(children="策略类型"),
         dcc.Dropdown(id='MAStrategyDown',
             options=[
@@ -115,6 +123,14 @@ def GetAverageStrategy():
                 {'label': 'ThripleAverage', 'value': 'ThripleAverage'},
             ],
             value='DoubleAverage'
+        ),
+
+        dcc.Dropdown(id='OperationType',
+            options=[
+                {'label': 'OnlyLong(仅做多)','value':'OnlyLong'},
+                {'label': 'LongAndShort(做多和做空均可)', 'value': 'LongAndShort'}
+            ],
+            value='OnlyLong'
         ),
 
         html.Div(id = 'AverageContainer'),

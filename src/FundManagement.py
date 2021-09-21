@@ -61,14 +61,16 @@ class OperationLogicClass:
         self.OperationTypeList = []
         self.OperationNameList = []
         self.ProfitList = []
+        self.PositionList = []
 
-    def UpdateList(self, TodayDate, TodayPrice, OperationType, OperationName, ProfitStatus, Index):
+    def UpdateList(self, TodayDate, TodayPrice, OperationType, OperationName, ProfitStatus, Index, Position):
         self.OperationTimeList.append(TodayDate)
         self.itxList2.append(Index)
         self.OperationPriceList.append(TodayPrice)
         self.OperationTypeList.append(OperationType)
         self.OperationNameList.append(OperationName)
         self.ProfitList.append(ProfitStatus)
+        self.PositionList.append(Position)
 
     def ToDataFrame(self):
 
@@ -79,6 +81,7 @@ class OperationLogicClass:
             "OperationType": self.OperationTypeList,
             "OperationName": self.OperationNameList,
             "Profit": self.ProfitList,
+            "Position": self.PositionList
         }
 
         ResultDataFrame = pd.DataFrame(OperationList)
@@ -98,7 +101,7 @@ class ResultAnalysisClass:
 
         length = len(self.OperationDataFrame)       #获取操作列表的长度
 
-        TotalCount = 0           #总(开/平)仓数
+        TotalCount = 0           #总(开/平)数
         ProfitableCount = 0      #盈利开仓数
         MaxProfit = -9999        #最大盈利
         MaxLoss = 9999           #最大回撤
@@ -136,4 +139,76 @@ class ResultAnalysisClass:
         print(AnalysisStrDict)
 
         return AnalysisNumberDict,AnalysisStrDict
+
+
+    def SignalAndOpeningAnalysis(self):
+
+        length = len(self.OperationDataFrame)       #获取操作列表的长度
+
+        TotalSignalCount = 0                  #总信号发生(开/平)数
+        TotalOpeningCount = 0                 #总开仓数
+        SignalProfitableCount = 0             #信号盈利数
+        OpeningProfitableCount = 0            #开仓盈利数
+        SignalMaxProfit = -9999               #信号最大盈利
+        SignalMaxLoss = 9999                  #信号最大亏损
+        OpeningMaxProfit = -9999              #开仓最大盈利
+        OpeningMaxLoss = 9999                 #开仓最大亏损
+
+        # j指向结算操作，i指向开仓操作
+        j = 1
+        while j < length:
+            i = j - 1
+
+            #增加总次数
+            TotalSignalCount = TotalSignalCount + 1
+
+            #信号处理
+            if self.OperationDataFrame.iloc[j].Profit > 0:
+                SignalProfitableCount = SignalProfitableCount + 1
+
+            if self.OperationDataFrame.iloc[j].Profit > SignalMaxProfit:
+                SignalMaxProfit = self.OperationDataFrame.iloc[j].Profit
+
+            if self.OperationDataFrame.iloc[j].Profit < SignalMaxLoss:
+                SignalMaxLoss = self.OperationDataFrame.iloc[j].Profit
+
+            #开仓处理
+            if self.OperationDataFrame.iloc[i].Position > 0:
+
+                TotalOpeningCount = TotalOpeningCount + 1
+
+                if self.OperationDataFrame.iloc[j].Profit > 0:
+                    OpeningProfitableCount = OpeningProfitableCount + 1
+
+                if self.OperationDataFrame.iloc[j].Profit > OpeningMaxProfit:
+                    OpeningMaxProfit = self.OperationDataFrame.iloc[j].Profit
+
+                if self.OperationDataFrame.iloc[j].Profit < OpeningMaxLoss:
+                    OpeningMaxLoss = self.OperationDataFrame.iloc[j].Profit
+
+            j = j + 2
+
+        SignalWinningProbability = SignalProfitableCount / TotalSignalCount
+        OpeningWinningProbability = OpeningProfitableCount / TotalOpeningCount
+
+        StrSignalMaxProfit = '{:.2f}%'.format(SignalMaxProfit*100)
+        StrSignalMaxLoss = '{:.2f}%'.format(SignalMaxLoss*100)
+        StrSignalWinningProbability = '{:.2f}%'.format(SignalWinningProbability*100)
+
+        StrOpeningMaxProfit = '{:.2f}%'.format(OpeningMaxProfit * 100)
+        StrOpeningMaxLoss = '{:.2f}%'.format(OpeningMaxLoss * 100)
+        StrOpeningWinningProbability = '{:.2f}%'.format(OpeningWinningProbability * 100)
+
+
+        SignalAnalysisNumberDict = {"TotalSignalCount": TotalSignalCount, "SignalProfitableCount": SignalProfitableCount,'SignalMaxProfit':SignalMaxProfit,'SignalMaxLoss':SignalMaxLoss,'SignalWinningProbability':SignalWinningProbability}
+        SignalAnalysisStrDict = {"TotalSignalCount": TotalSignalCount, "SignalProfitableCount": SignalProfitableCount,'SignalMaxProfit':StrSignalMaxProfit,'SignalMaxLoss':StrSignalMaxLoss,'SignalWinningProbability':StrSignalWinningProbability}
+
+        OpeningAnalysisNumberDict = {"TotalOpeningCount": TotalOpeningCount, "OpeningProfitableCount": OpeningProfitableCount,
+                              'OpeningMaxProfit': OpeningMaxProfit, 'OpeningMaxLoss': OpeningMaxLoss,
+                              'OpeningWinningProbability': OpeningWinningProbability}
+        OpeningAnalysisStrDict = {"TotalOpeningCount": TotalOpeningCount, "OpeningProfitableCount": OpeningProfitableCount,
+                           'OpeningMaxProfit': StrOpeningMaxProfit, 'OpeningMaxLoss': StrOpeningMaxLoss,
+                           'OpeningWinningProbability': StrOpeningWinningProbability}
+
+        return SignalAnalysisStrDict,OpeningAnalysisStrDict
 
