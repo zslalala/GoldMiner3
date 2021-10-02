@@ -2,6 +2,7 @@ import dash
 import dash_table
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 from Server import app,server
 import DashMainPagePlot                 #一定要导入，不要乱删
@@ -39,11 +40,31 @@ def GetOverAllLayOut():
 def GetStockIdLayOut():
 
     StockIdLayOut = html.Div([
-        dcc.Input(id="StockIdInput", value='SHSE.600000', type='text'),
-        dcc.Input(id="StartTime", value='2010-01-01', type='text'),
-        dcc.Input(id="EndTime", value='2021-08-31', type='text'),
+        dbc.InputGroup(
+            [
+                dbc.InputGroupAddon("股票代码",addon_type="prepend"),
+                dcc.Input(id="StockIdInput", value='SHSE.600000', type='text',style = {'width':'10%'})
+            ],
+        ),
+        dbc.Form(
+            [
+                dbc.InputGroup(
+                    [
+                        dbc.InputGroupAddon("开始日期", addon_type="prepend"),
+                        dcc.Input(id="StartTime", value='2010-01-01', type='text'),
+                    ]
+                ),
+                dbc.InputGroup(
+                    [
+                        dbc.InputGroupAddon("终止日期", addon_type="prepend"),
+                        dcc.Input(id="EndTime", value='2021-08-31', type='text'),
+                    ]
+                ),
+            ],
+            inline=True
+        ),
         html.Br(),
-        html.Button('查询', id='StockIdButton', n_clicks=0),
+        dbc.Button('查询', id='StockIdButton',color="info", className="mr-1", n_clicks=0),
         html.P(id='StockP')
     ])
 
@@ -54,7 +75,7 @@ def GetMALayOut():
 
     MALayOut = html.Div([
         html.P(id="MATypeP", children="均线类型"),
-        dcc.Dropdown(
+        dbc.Select(
             id='MATypeDrop',
             options=[
                 {'label': 'SMA', 'value': 'SMA'},
@@ -69,7 +90,7 @@ def GetMALayOut():
         dcc.Input(id='Timing03', value=60, type='number'),
         dcc.Input(id='Timing04', value=120, type='number'),
         html.Br(),
-        html.Button('Submit', id='MAButton', n_clicks=0)
+        dbc.Button('Submit', id='MAButton',color="info", className="mr-1", n_clicks=0)
     ])
 
     return MALayOut
