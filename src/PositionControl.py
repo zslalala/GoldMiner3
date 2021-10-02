@@ -83,8 +83,6 @@ def GetPercentage(Name,data,threshold = 100):
 
     SortList,resultList = InsertPercentage(targetList,threshold)
 
-    print(resultList)
-
     #设置估值要素百分比列名
     PercentageName = "Percentage" + Name
 

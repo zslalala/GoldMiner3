@@ -6,6 +6,7 @@ from dash.dependencies import Input, Output, State
 from Server import app,server
 import DashMainPagePlot                 #一定要导入，不要乱删
 import MovingAverageStrategy            #一定要导入，不要乱删
+import StopLossLayOut                   #一定要导入，不要乱删
 
 #总布局
 def GetOverAllLayOut():
@@ -125,6 +126,7 @@ def GetAverageStrategy():
             value='DoubleAverage'
         ),
 
+        html.P(children="操作类型"),
         dcc.Dropdown(id='OperationType',
             options=[
                 {'label': 'OnlyLong(仅做多)','value':'OnlyLong'},
@@ -133,6 +135,16 @@ def GetAverageStrategy():
             value='OnlyLong'
         ),
 
+        html.P(children="止损策略"),
+        dcc.Dropdown(id="LossControl",
+                     options=[
+                {'label': 'None(无止损)','value':'None'},
+                {'label': 'ATR', 'value': 'ATR'}
+            ],
+            value='ATR'),
+        html.Div(id = 'StopLossContainer'),
+
+        html.Br(),
         html.Div(id = 'AverageContainer'),
         html.P(id = "TestMultiFileP"),
     ])

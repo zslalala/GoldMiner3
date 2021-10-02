@@ -3,28 +3,26 @@ import numpy as np
 import talib
 import pandas_ta as ta
 
-def DealMovingAverage(data,MAtype,windowList):
+def DealMovingAverage(data,MAtype,windowList,Copy=True):
 
     if MAtype == 'SMA':
-        return SimpleMovingAverage(data,windowList)
+        return SimpleMovingAverage(data,windowList,Copy)
 
     if MAtype == 'EMA':
-        return ExponentialMovingAverage(data,windowList)
+        return ExponentialMovingAverage(data,windowList,Copy)
 
     if MAtype == 'WMA':
-        return WeightedMovingAverage(data,windowList)
+        return WeightedMovingAverage(data,windowList,Copy)
 
     if MAtype == 'HMA':
-        return HullMovingAverage(data,windowList)
+        return HullMovingAverage(data,windowList,Copy)
 
-def SimpleMovingAverage(data,windowList):
+def SimpleMovingAverage(data,windowList,Copy):
 
     #定义新的Dataframe
-    Average = pd.DataFrame(data.itx)
+    Average = data.copy(deep=True)
 
-    Average['close'] = data.close
-
-    close_np = np.asarray(data['close'])
+    close_np = np.asarray(Average['close'])
 
     MAtitleName = []
 
@@ -38,17 +36,22 @@ def SimpleMovingAverage(data,windowList):
 
         Average[strName] = dataSMA
 
-    return Average,MAtitleName
+        if Copy is False:
+            data[strName] = dataSMA
+
+    if Copy is True:
+        return Average, MAtitleName
+    else:
+        return data, MAtitleName
 
 
-def ExponentialMovingAverage(data,windowList):
+
+def ExponentialMovingAverage(data,windowList,Copy):
 
     #定义新的Dataframe
-    Average = pd.DataFrame(data.itx)
+    Average = data.copy(deep=True)
 
-    Average['close'] = data.close
-
-    close_np = np.asarray(data['close'])
+    close_np = np.asarray(Average['close'])
 
     MAtitleName = []
 
@@ -62,16 +65,20 @@ def ExponentialMovingAverage(data,windowList):
 
         Average[strName] = dataEMA
 
-    return Average,MAtitleName
+        if Copy is False:
+            data[strName] = dataEMA
 
-def WeightedMovingAverage(data,windowList):
+    if Copy is True:
+        return Average, MAtitleName
+    else:
+        return data, MAtitleName
+
+def WeightedMovingAverage(data,windowList,Copy):
 
     # 定义新的Dataframe
-    Average = pd.DataFrame(data.itx)
+    Average = data.copy(deep=True)
 
-    Average['close'] = data.close
-
-    close_np = np.asarray(data['close'])
+    close_np = np.asarray(Average['close'])
 
     MAtitleName = []
 
@@ -85,14 +92,20 @@ def WeightedMovingAverage(data,windowList):
 
         Average[strName] = dataWMA
 
-    return Average, MAtitleName
+        if Copy is False:
+            data[strName] = dataWMA
 
-def HullMovingAverage(data,windowList):
+    if Copy is True:
+        return Average, MAtitleName
+    else:
+        return data, MAtitleName
+
+def HullMovingAverage(data,windowList,Copy):
 
     # 定义新的Dataframe
-    Average = pd.DataFrame(data.itx)
+    Average = data.copy(deep=True)
 
-    Average['close'] = data.close
+    close_np = np.asarray(Average['close'])
 
     MAtitleName = []
 
@@ -106,4 +119,10 @@ def HullMovingAverage(data,windowList):
 
         Average[strName] = dataHMA
 
-    return Average, MAtitleName
+        if Copy is False:
+            data[strName] = dataHMA
+
+    if Copy is True:
+        return Average, MAtitleName
+    else:
+        return data, MAtitleName

@@ -1,8 +1,73 @@
 import numpy as np
 import pandas as pd
+from PositionControl import GetPositionByPETTM
 
-#资金管理类
-class FundCurveClass:
+#资金管理类，用于资金逻辑的处理
+class FundManagementClass:
+
+    def __init__(self):
+        self.PositionHoldingCostPrice = 0          #持仓单价成本
+        self.IdleFund = 0                          #现有闲置资金
+        self.AssetsPositionFund = 0                #现有资产价值
+        self.AssetsInvestedFund = 0                #资产购入所花费总资金(总成本)
+        self.TotalFund = 0                         #总资产
+        self.PositionType = 0                      #仓位类型
+        self.IncreaseRate = 0                      #开仓资产变动率
+        self.CurrentProfit = 0                     #盈利率
+
+    def Init(self):
+        self.PositionHoldingCostPrice = 0          #初始持仓成本单价为0
+        self.IdleFund = 1                          #初始闲置资金为1
+        self.TotalFund = 1                         #初始总资金为1
+        self.AssetsPositionFund = 0                #初始现有资产价值为0(空仓)
+        self.AssetsInvestedFund = 0                #初始资产购入所花费总资金为0(空仓)
+        self.PositionType = 0                      #仓位类型(0:空仓)
+        self.IncreaseRate = 0                      #开仓资产变动率
+        self.CurrentProfit = 0                     #盈利率
+
+    #根据比较基准价格更新收益率
+    def UpdateIncreaseRate(self,price):
+
+        #先计算股票变动率
+        if self.PositionType == 0:
+            self.IncreaseRate = 0
+        else:
+            self.IncreaseRate = (price - self.PositionHoldingCostPrice) / self.PositionHoldingCostPrice
+
+        #考虑开仓方向，计算本次开仓盈利情况
+        self.CurrentProfit = self.IncreaseRate * self.PositionType
+
+        #根据盈利情况，得到新的资产市值
+        self.AssetsPositionFund = self.AssetsInvestedFund * (1 + self.CurrentProfit)
+
+        #总资金 = 闲置资金 + 资产市值
+        self.TotalFund = self.IdleFund + self.AssetsPositionFund
+
+    def CloseThePosition(self):
+
+        self.PositionHoldingCostPrice = 0                           # 修改持仓资本为0
+        self.IdleFund = self.AssetsPositionFund + self.IdleFund     # 闲置资金设置为原闲置资金 + 原资产市场价值
+        self.AssetsPositionFund = 0                                 # 原资产市场价值设置为0
+        self.AssetsInvestedFund = 0                                 # 原资产成本价值设置为0
+        self.TotalFund = self.IdleFund                              # 总资产设置为平仓后的闲置资金
+        self.PositionType = 0                                       # 设置仓位类型为空仓
+
+    def OpenThePosition(self,price,PositionType,PositionControlName,TodayElementValuation):
+
+        self.PositionHoldingCostPrice = price
+        self.PositionType = PositionType
+
+        # 仓位控制逻辑（1.计算仓位百分比，2.设定实时资产数额，3.计算闲置资金）
+        PositionPercent = GetPositionByPETTM(PositionControlName, TodayElementValuation, PositionType)
+        self.AssetsInvestedFund = self.TotalFund * PositionPercent              # 计算仓位
+        self.AssetsPositionFund = self.AssetsInvestedFund                       # 设定实时资产数额
+        self.IdleFund = self.TotalFund - self.AssetsPositionFund                # 闲置资金 = 总资产 - 投资仓位
+
+        return PositionPercent
+
+
+#工具类，用于更新资金相关变化
+class FundCurveToolClass:
 
     #资金管理属性列表集合
     def __init__(self):
@@ -17,18 +82,18 @@ class FundCurveClass:
         self.TotalFundList = []                  #总资产
         self.TotalInterestList = []              #总资产收益率
 
-    def UpdateList(self,TodayDate,Index,TodayPrice,PositionCost,PositionType,AssetsPositionFund,AssetsIncrease,IdleFund,TotalFund,TotalInterest):
+    def UpdateList(self,TodayDate,Index,TodayPrice,AssetsIncrease,FundManagementTool):
 
         self.DateList.append(TodayDate)
         self.itxList1.append(Index)
         self.CloseList.append(TodayPrice)
-        self.PositionCostList.append(PositionCost)
-        self.PositionTypeList.append(PositionType)
-        self.AssetsFundList.append(AssetsPositionFund)
+        self.PositionCostList.append(FundManagementTool.PositionHoldingCostPrice)
+        self.PositionTypeList.append(FundManagementTool.PositionType)
+        self.AssetsFundList.append(FundManagementTool.AssetsPositionFund)
         self.AssetsIncreaseList.append(AssetsIncrease)
-        self.IdleFundList.append(IdleFund)
-        self.TotalFundList.append(TotalFund)
-        self.TotalInterestList.append(TotalInterest)
+        self.IdleFundList.append(FundManagementTool.IdleFund)
+        self.TotalFundList.append(FundManagementTool.TotalFund)
+        self.TotalInterestList.append(FundManagementTool.TotalFund - 1)
 
     def ToDataFrame(self):
 
@@ -135,8 +200,6 @@ class ResultAnalysisClass:
 
         AnalysisNumberDict = {"TotalCount": TotalCount, "ProfitableCount": ProfitableCount,'MaxProfit':MaxProfit,'MaxLoss':MaxLoss,'WinningProbability':WinningProbability}
         AnalysisStrDict = {"TotalCount": TotalCount, "ProfitableCount": ProfitableCount,'MaxProfit':StrMaxProfit,'MaxLoss':StrMaxLoss,'WinningProbability':StrWinningProbability}
-        print(AnalysisNumberDict)
-        print(AnalysisStrDict)
 
         return AnalysisNumberDict,AnalysisStrDict
 

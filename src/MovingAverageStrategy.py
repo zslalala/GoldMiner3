@@ -11,8 +11,11 @@ from DashMainPagePlot import GetData
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 import FundManagement as FM
+import LayOutTemplate
 from PositionControl import GetPercentage,GetPositionByPETTM
-import numpy as np
+from Start import r
+from VolatilityIndex import CalVolatility
+from StopLossLogic import DynamicStopLoss
 
 
 #均线策略下滑框选择
@@ -34,6 +37,7 @@ def MASDynamicChoice(text):
                 dcc.Graph(id="MADProfitStrateGraph"),
                 html.Div(id='DoubleAverageContainer1'),
                 html.Div(id='DoubleAverageContainer2'),
+                html.Div(id='DoubleAverageContainer3'),
             ]
         )
 
@@ -53,7 +57,8 @@ def MASDynamicChoice(text):
     [Output("MADShownStrategyGraph", "figure"),
      Output("MADProfitStrateGraph","figure"),
      Output("DoubleAverageContainer1","children"),
-     Output("DoubleAverageContainer2","children")],
+     Output("DoubleAverageContainer2","children"),
+     Output("DoubleAverageContainer3","children")],
     [Input('MAStrategyButton','n_clicks')],
     [State("MAStrategyTypeDown","value"),
      State("DBPositionControl","value"),
@@ -62,6 +67,10 @@ def MASDynamicChoice(text):
      State("OperationType","value")]
 )
 def MainGraphPlot(n_clicks,MAType,PositionControlName,DShortMA,DLongMA,OperationType):
+
+    result = r.get("LossControl")
+    print('****************************************')
+    print(result)
 
     windowList = [DShortMA,DLongMA]
 
@@ -73,7 +82,7 @@ def MainGraphPlot(n_clicks,MAType,PositionControlName,DShortMA,DLongMA,Operation
     #获取估值要素的动态比例
     data,PercentageName = GetPercentage(PositionControlName,data)
 
-    print(data)
+    # print(data)
 
     Average,MAtitleName = DealMovingAverage(data=data,MAtype=MAType,windowList=windowList)
 
@@ -81,11 +90,13 @@ def MainGraphPlot(n_clicks,MAType,PositionControlName,DShortMA,DLongMA,Operation
         Average[PositionControlName] = data[PositionControlName]
         Average[PercentageName] = data[PercentageName]
 
-    print(Average)
+    VolatilityData = CalVolatility(Average, "ATR")
+
+    print(VolatilityData)
 
     BuyAndSellResult = BuyAndSellPoint(Average,date_list,MAtitleName)
 
-    ResultDataFrame,OperationDataFrame = FundCurveCal(Average,date_list,BuyAndSellResult,PositionControlName,PercentageName,OperationType)
+    ResultDataFrame,OperationDataFrame = FundCurveCal(Average,date_list,BuyAndSellResult,PositionControlName,PercentageName,OperationType,VolatilityData)
 
     Ana = FM.ResultAnalysisClass(OperationDataFrame)
 
@@ -126,51 +137,21 @@ def MainGraphPlot(n_clicks,MAType,PositionControlName,DShortMA,DLongMA,Operation
     #资金图绘制函数
     fig2 = make_subplots(rows=1, cols=1,
                         subplot_titles=('FundChange'))
-
     fig2.add_trace(go.Scatter(x=ResultDataFrame.itx, y=ResultDataFrame.TotalFund, name='Fund'), row=1,
                   col=1)
-
     fig2.add_trace(go.Scatter(x=ResultDataFrame.itx, y=ResultDataFrame.AssetsFund,name='AssetPosition'),row=1,col=1)
-
-    # fig2.add_trace(go.Scatter(x=ResultDataFrame.itx, y=ResultDataFrame.AssetsFund / ResultDataFrame.TotalFund,name='Percent'),
-    #                row=1,col=1)
-
     fig2.update(layout_xaxis_rangeslider_visible=False)
     fig2.update_layout(title="资金变化曲线")
 
-    tableDiv1 = html.Div(
-        [html.P(id="tableDiv1PSignal", children="策略信号运行结果"),
-         dash_table.DataTable(
-             id='DBTable1',
-             columns=[{"name": i, "id": i} for i in SADataFrame.columns],
-             data=SADataFrame.to_dict('records'),
-         ),
-         html.P(id="tableDiv1POpening", children="策略开仓运行结果"),
-         dash_table.DataTable(
-             id='DBTable1',
-             columns=[{"name": i, "id": i} for i in OADataFrame.columns],
-             data=OADataFrame.to_dict('records'),
-         )
-         ]
-    )
+    tableDiv1 = LayOutTemplate.GetTables(SADataFrame,'DBTable1',True,'tabelDiv1P',"策略信号运行结果")
+    tableDiv2 = LayOutTemplate.GetTables(OADataFrame,'DBTable2',True,'tabelDiv2P',"策略开仓运行结果")
+    tableDiv3 = LayOutTemplate.GetTables(OperationDataFrame,'DBTable3',True,"tableDiv3P","详细操作列表",)
 
-    tableDiv2 = html.Div(
-        [html.P(id = "tableDiv2P",children="详细操作列表"),
-        dash_table.DataTable(
-            id='DBTable2',
-            columns=[{"name": i, "id": i} for i in OperationDataFrame.columns],
-            data=OperationDataFrame.to_dict('records'),
-        )]
-    )
-
-    return fig,fig2,tableDiv1,tableDiv2
+    return fig,fig2,tableDiv1,tableDiv2,tableDiv3
 
 
 # 资金曲线计算函数
-def FundCurveCal(Average,date_list,BuyAndSellResult,PositionControlName,PercentageName,OperationType):
-
-    # 开仓情况，0代表未持有任何仓位，1代表持有多头仓位，-1代表持有空头仓位
-    PositionType = 0
+def FundCurveCal(Average,date_list,BuyAndSellResult,PositionControlName,PercentageName,OperationType,VolatilityData):
 
     #获取主数据长度
     Average_length = len(Average)
@@ -178,32 +159,21 @@ def FundCurveCal(Average,date_list,BuyAndSellResult,PositionControlName,Percenta
     #获取结果数据长度
     BuyAndSellResultLength = len(BuyAndSellResult)
 
-    #持有仓位的成本价
-    PositionHoldingCostPrice = -1
-
     #Average数据遍历器
     i = 0
     #BuyAndSellResult数据遍历器
     k = 0
 
-    #总资产
-    TotalFund = 1
-
-    #本次操作投入资产
-    AssetsInvestedFund = 0
-
-    #持仓资产
-    AssetsPositionFund = 0
-
     #今日估值要素
     TodayElementValuation = -1
 
-    #闲置资金
-    IdleFund = 1
-
     #资金曲线逻辑
-    FundManageMent = FM.FundCurveClass()
+    FundCurveTool = FM.FundCurveToolClass()
     OperationLogic = FM.OperationLogicClass()
+    FundManagementTool = FM.FundManagementClass()
+
+    #初始化资产情况
+    FundManagementTool.Init()
 
     #双重遍历
     while i < Average_length and k < BuyAndSellResultLength:
@@ -214,19 +184,7 @@ def FundCurveCal(Average,date_list,BuyAndSellResult,PositionControlName,Percenta
             TodayElementValuation = Average.iloc[i][PercentageName]     #则今日估值要素的值
 
         # 计算持仓股票的涨跌幅
-        if PositionType == 0:
-            IncreaseRate = 0
-        else:
-            IncreaseRate = (TodayPrice - PositionHoldingCostPrice) / PositionHoldingCostPrice
-
-        #本次开仓盈利情况
-        CurrentProfit = IncreaseRate * PositionType
-
-        #持仓资金数
-        AssetsPositionFund = AssetsInvestedFund * (1 + CurrentProfit)
-
-        #总资金曲线变化
-        TotalFund = IdleFund + AssetsPositionFund
+        FundManagementTool.UpdateIncreaseRate(TodayPrice)
 
         #列表
         TodayDate = date_list[i]
@@ -235,81 +193,67 @@ def FundCurveCal(Average,date_list,BuyAndSellResult,PositionControlName,Percenta
         BuyAndSellIndex = BuyAndSellResult.iloc[k]['itx']         #BuyAndSell的Index
         Signal = BuyAndSellResult.iloc[k]['BuySellLabel']         #买卖信号
 
-        #当二者的序列号相同的时候
+        #获取动态止损信号以及动态止损价格
+        DynamicStopLossSignal,DynamicStopLossPrice = DynamicStopLoss(i,FundManagementTool.PositionType,Average,VolatilityData)
+
+        #如果触发了动态止损信号
+        if DynamicStopLossSignal == 1:
+            #重新核算资金
+            FundManagementTool.UpdateIncreaseRate(DynamicStopLossPrice)
+
+            #平仓逻辑
+            FundManagementTool.CloseThePosition()
+            if FundManagementTool.PositionType == 1:
+                OperationLogic.UpdateList(TodayDate, TodayPrice, 2, "平多", FundManagementTool.CurrentProfit, AverageIndex, 0)
+            else:
+                OperationLogic.UpdateList(TodayDate, TodayPrice, 4, "平空", FundManagementTool.CurrentProfit, AverageIndex, 0)
+
+        #当二者的序列号相同的时候——触发策略信号时
         if AverageIndex == BuyAndSellIndex:
 
             #出现金叉信号，将仓位持有信号切换为多头仓位，同时更新持仓成本
             if Signal == 1:
 
-                #平空仓逻辑(1.修改持仓成本，2.修改闲置资金，持仓资产，持仓初始投资成本，总资本 3.更新操作逻辑列表，4.修改持仓类型)
-                if PositionType == -1:
-                    PositionHoldingCostPrice = 0                       # 修改持仓资本为0
-                    IdleFund = AssetsPositionFund + IdleFund           # 闲置资金设置为原闲置资金 + 原资产市场价值
-                    AssetsPositionFund = 0                             # 原资产市场价值设置为0
-                    AssetsInvestedFund = 0                             # 原资产成本价值设置为0
-                    TotalFund = IdleFund                               # 总资产设置为平仓后的闲置资金
-                    OperationLogic.UpdateList(TodayDate,TodayPrice,4,"平空",CurrentProfit,AverageIndex,0)
-                    PositionType = 0
+                #平空仓逻辑
+                if FundManagementTool.PositionType == -1:
+                    FundManagementTool.CloseThePosition()           #平仓逻辑
+                    OperationLogic.UpdateList(TodayDate,TodayPrice,4,"平空",FundManagementTool.CurrentProfit,AverageIndex,0)
 
-                #开多仓逻辑(1.修改持仓成本，2.更新操作逻辑列表，3.修改持仓类型)
-                PositionHoldingCostPrice = TodayPrice
-                PositionType = 1
-
-                #仓位控制逻辑（1.计算仓位百分比，2.设定实时资产数额，3.计算闲置资金）
-                PositionPercent = GetPositionByPETTM(PositionControlName,TodayElementValuation,1)
-                AssetsInvestedFund = TotalFund * PositionPercent                    # 计算仓位
-                AssetsPositionFund = AssetsInvestedFund                             # 设定实时资产数额
-                IdleFund = TotalFund - AssetsPositionFund                           # 闲置资金 = 总资产 - 投资仓位
-
+                #开多仓
+                PositionPercent = FundManagementTool.OpenThePosition(TodayPrice,1,PositionControlName,TodayElementValuation)
                 #更新列表
-                OperationLogic.UpdateList(TodayDate, PositionHoldingCostPrice, 1, "开多", 0, AverageIndex,PositionPercent)
+                OperationLogic.UpdateList(TodayDate, FundManagementTool.PositionHoldingCostPrice, 1, "开多", 0, AverageIndex,PositionPercent)
 
             #出现死叉信号，将仓位持有信号切换为空头仓位，同时更新持仓成本
             if Signal == 2:
 
                 # 平多仓逻辑(1修改持仓成本，2.更新操作逻辑列表，3.修改持仓类型)
-                if PositionType == 1:
-                    PositionHoldingCostPrice = 0                        # 修改持仓资本为0
-                    IdleFund = AssetsPositionFund + IdleFund            # 闲置资金设置为原闲置资金 + 原资产市场价值
-                    AssetsPositionFund = 0                              # 原资产市场价值设置为0
-                    AssetsInvestedFund = 0                              # 原资产成本价值设置为0
-                    TotalFund = IdleFund                                # 总资产设置为平仓后的闲置资金
-                    OperationLogic.UpdateList(TodayDate, TodayPrice, 2, "平多", CurrentProfit, AverageIndex,0)
-                    PositionType = 0
+                if FundManagementTool.PositionType == 1:
+                    FundManagementTool.CloseThePosition()
+                    OperationLogic.UpdateList(TodayDate, TodayPrice, 2, "平多", FundManagementTool.CurrentProfit, AverageIndex,0)
 
                 #仅在允许做空时
                 if OperationType == 'LongAndShort':
-
-                    # 开空仓逻辑(1.修改持仓成本，2.更新操作逻辑列表，3.修改持仓类型)
-                    PositionHoldingCostPrice = TodayPrice
-                    PositionType = -1
-
-                    # 仓位控制逻辑（1.计算仓位，2.设定实时资产数额，3.计算闲置资金）
-                    PositionPercent = GetPositionByPETTM(PositionControlName,TodayElementValuation,-1)             # 计算仓位
-                    AssetsInvestedFund = TotalFund * PositionPercent
-                    AssetsPositionFund = AssetsInvestedFund                                                        # 设定实时资产数额
-                    IdleFund = TotalFund - AssetsPositionFund                                                      # 闲置资金 = 总资产 - 投资仓位
-
-                    OperationLogic.UpdateList(TodayDate, PositionHoldingCostPrice, 3, "开空", 0, AverageIndex,PositionPercent)
+                    #开空仓
+                    PositionPercent = FundManagementTool.OpenThePosition(TodayPrice,-1,PositionControlName,TodayElementValuation)                                                     # 闲置资金 = 总资产 - 投资仓位
+                    #更新列表
+                    OperationLogic.UpdateList(TodayDate, FundManagementTool.PositionHoldingCostPrice, 3, "开空", 0, AverageIndex,PositionPercent)
 
             k = k + 1
 
         #计算持仓资产收益情况(针对当日调仓进行补丁)
-        if PositionType == 0:        #空仓时，没有收益
+        if FundManagementTool.PositionType == 0:        #空仓时，没有收益
             PositionInterest = 0
         else:                        #否则计算收益
-            PositionInterest = ((TodayPrice - PositionHoldingCostPrice) * PositionType) / PositionHoldingCostPrice
+            PositionInterest = ((TodayPrice - FundManagementTool.PositionHoldingCostPrice) * FundManagementTool.PositionType) / FundManagementTool.PositionHoldingCostPrice
 
         # 更新资金列表
-        FundManageMent.UpdateList(TodayDate,AverageIndex,TodayPrice,PositionHoldingCostPrice,PositionType,AssetsPositionFund,PositionInterest,
-                                  IdleFund,TotalFund,TotalFund - 1)
+        FundCurveTool.UpdateList(TodayDate,AverageIndex,TodayPrice,PositionInterest,FundManagementTool)
 
         i = i + 1
 
-    ResultDataFrame = FundManageMent.ToDataFrame()
+    ResultDataFrame = FundCurveTool.ToDataFrame()
     OperationDataFrame = OperationLogic.ToDataFrame()
-    print(ResultDataFrame)
-    print(OperationDataFrame)
 
     return ResultDataFrame,OperationDataFrame
 
@@ -317,7 +261,6 @@ def FundCurveCal(Average,date_list,BuyAndSellResult,PositionControlName,Percenta
 def StrategyPropertiesComput():
 
     return 0
-
 
 
 # 双均线策略执行函数
@@ -358,7 +301,7 @@ def BuyAndSellPoint(Average, date_list, MAtitleName):
         ClosePrice = Average.iloc[j][CloseName]
 
         # 用来画图的index
-        index = Average.iloc[j][0]
+        index = Average.iloc[j].itx
 
         # 当日date
         TodayDate = date_list[j]
@@ -391,8 +334,6 @@ def BuyAndSellPoint(Average, date_list, MAtitleName):
 
     ResultDataFrame = pd.DataFrame(ResultDict)
 
-    print(ResultDataFrame)
-
     return ResultDataFrame
 
 def GetRows(PositionControlName):
@@ -401,18 +342,3 @@ def GetRows(PositionControlName):
         return 1
     else:
         return 2
-
-#测试函数
-@app.callback(
-    Output("my-div","children"),
-    Input("ValueEvaluation", "value")
-)
-def TestMultiFile(text):
-
-    data,date_list = GetData()
-
-    #判断Data是否已经定义，若未定义则返回No Data，若已定义则返回所需
-    if data is None:
-        return "No Data"
-    else:
-        return text + "300"
